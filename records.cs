@@ -61,12 +61,12 @@ public class Command: ICommand
         {
             var recordText = string.Join(", ", records.Select(r => $"{r.Type}: {r.Amount} times"));
             var text = $"@{ctx.Message.User.DisplayName} your records: {recordText}";
-            await ctx.ChatService.SendReplyAsBot(ctx.Channel, text, ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Channel, text, ctx.Message.Id);
         }
         else
         {
             var text = $"@{ctx.Message.User.DisplayName} you have no records yet!";
-            await ctx.ChatService.SendReplyAsBot(ctx.Channel, text, ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Channel, text, ctx.Message.Id);
         }
     }
 }

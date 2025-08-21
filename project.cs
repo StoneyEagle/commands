@@ -24,7 +24,7 @@ public class Command: ICommand
                    "It is time to take back control of your media and return to enjoying what you love. " +
                    "No tracking, no ads, no data collection, NoMercy!";
 
-        await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
+        await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
 
         // TODO: Implement Spotify volume control and blerp playback
         // await spotifyClient.Volume(10);

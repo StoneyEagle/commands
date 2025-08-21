@@ -24,14 +24,14 @@ public class Command: ICommand
 
         if (currentSong?.Item == null)
         {
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, "No song is currently playing!", ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, "No song is currently playing!", ctx.Message.Id);
             return;
         }
 
         await spotifyService.NextTrack();
 
         var text = "I know right, Stoney's song choices are always on point! Skipped to the next track.";
-        await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
+        await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
     }
 }
 

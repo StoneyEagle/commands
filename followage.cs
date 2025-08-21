@@ -26,12 +26,12 @@ public class Command: ICommand
             var followDuration = DateTimeOffset.UtcNow - follow.FollowedAt;
             var durationText = FormatDuration(followDuration);
             var text = $"@{ctx.Message.User.DisplayName} You have been following for {durationText}!";
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
         }
         else
         {
             var text = $"@{ctx.Message.User.DisplayName} You are not following!";
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
         }
     }
     

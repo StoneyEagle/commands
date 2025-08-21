@@ -10,13 +10,14 @@ using NoMercyBot.Services.Twitch;
 using NoMercyBot.Services.Twitch.Scripting;
 using NoMercyBot.Services.Interfaces;
 using Serilog.Events;
+using System.Threading;
 
 public class Command: ICommand
 {
     public string Name => "so";
     public CommandPermission Permission => CommandPermission.Moderator;
 
-    private static readonly string[] _snarkyShoutoutReplies =
+    private static readonly string[] SnarkyShoutoutReplies =
     {
         "Check out @{displayname}! {Subject} has some great {game} content. Go give {object} a follow! {Subject} {tense} practically a pro, or at least {Subject} play one on Twitch.",
         "Yo, peep this! @{displayname} {tense} rocking some {game} stuff. Go give {object} a follow! {Subject} {tense} so good, it's almost annoying.",
@@ -37,7 +38,7 @@ public class Command: ICommand
     {
         if (ctx.Arguments.Length == 0)
         {
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"@{ctx.Message.User.DisplayName} You need to specify a user to shoutout!", ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"@{ctx.Message.User.DisplayName} You need to specify a user to shoutout!", ctx.Message.Id);
             return;
         }
         
@@ -45,41 +46,17 @@ public class Command: ICommand
 
         try
         {
-            var user = await ctx.DatabaseContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Username.ToLower() == name);
-
-            user ??= await ctx.TwitchApiService.FetchUser(login: name);
-
-            if (user == null)
-            {
-                await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"@{ctx.Message.User.DisplayName} User '{name}' not found!", ctx.Message.Id);
-                return;
-            }
-
-            var channelInfo = await ctx.DatabaseContext.ChannelInfo
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == user.Id);
-
+            var user = await ctx.TwitchApiService.GetOrFetchUser(name: name);
+            var channel = await ctx.TwitchApiService.GetOrFetchChannel(id: user.Id);
+            var channelInfo = await ctx.TwitchApiService.GetOrFetchChannelInfo(id: user.Id);
+            
             string gameName = "Something awesome";
             string title = "";
             bool isLive = false;
 
-            if (channelInfo != null)
-            {
-                gameName = channelInfo.GameName ?? "something awesome";
-                title = channelInfo.Title ?? "";
-                isLive = channelInfo.IsLive;
-            }
-            else
-            {
-                var apiChannelInfo = await ctx.TwitchApiService.GetChannelInfo(user.Id);
-                var streamInfo = await ctx.TwitchApiService.GetStreamInfo(user.Id);
-                
-                gameName = apiChannelInfo?.GameName ?? "something awesome";
-                title = apiChannelInfo?.Title ?? "";
-                isLive = streamInfo.Type == "live";
-            }
+            gameName = channelInfo.GameName ?? "something awesome";
+            title = channelInfo.Title ?? "";
+            isLive = channelInfo.IsLive;
 
             // Create modified context for template replacement
             var modifiedCtx = new CommandScriptContext
@@ -98,30 +75,14 @@ public class Command: ICommand
                 ReplyAsync = ctx.ReplyAsync,
                 CancellationToken = ctx.CancellationToken,
                 ServiceProvider = ctx.ServiceProvider,
-                ChatService = ctx.ChatService,
+                TwitchChatService = ctx.TwitchChatService,
+                TtsService = ctx.TtsService,
                 TwitchApiService = ctx.TwitchApiService,
                 DatabaseContext = ctx.DatabaseContext, 
             };
-            
-            var channel = await ctx.DatabaseContext.Channels
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Name == name);
 
-            var randomTemplate = channel?.ShoutoutTemplate ?? _snarkyShoutoutReplies[Random.Shared.Next(_snarkyShoutoutReplies.Length)];
+            var randomTemplate = channel?.ShoutoutTemplate ?? SnarkyShoutoutReplies[Random.Shared.Next(SnarkyShoutoutReplies.Length)];
             var text = TemplateHelper.ReplaceTemplatePlaceholders(randomTemplate, modifiedCtx, isLive, gameName, title);
-
-            try
-            {
-                await ctx.TwitchApiService.SendAnnouncement(
-                    ctx.Message.BroadcasterId, 
-                    ctx.Message.BroadcasterId,
-                    text);
-            }
-            catch (Exception e)
-            {
-                // Silently handle API errors - announcement was already sent
-                Logger.Twitch($"Failed to send announcement for shoutout: {e.Message}", LogEventLevel.Error);
-            }
 
             try
             {
@@ -135,10 +96,25 @@ public class Command: ICommand
                 // Silently handle API errors - announcement was already sent
                 Logger.Twitch($"Failed to send shoutout for user {user.Username}: {e.Message}", LogEventLevel.Error);
             }
+            
+            try
+            {
+                await ctx.TwitchApiService.SendAnnouncement(
+                    ctx.Message.BroadcasterId, 
+                    ctx.Message.BroadcasterId,
+                    text);
+                
+                await ctx.TtsService.SendCachedTts(text, user.Id, new());
+            }
+            catch (Exception e)
+            {
+                Logger.Twitch($"Failed to send announcement for shoutout: {e.Message}", LogEventLevel.Error);
+            }
+
         }
         catch (Exception ex)
         {
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"@{ctx.Message.DisplayName} An error occurred while processing the shoutout.", ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"@{ctx.Message.DisplayName} An error occurred while processing the shoutout.", ctx.Message.Id);
         }
     }
 }

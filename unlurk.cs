@@ -73,7 +73,6 @@ public class Command: ICommand
    public async Task Callback(CommandScriptContext ctx)
    {
        List<string> _lurkers = await ctx.DatabaseContext.Storages
-           .AsNoTracking()
            .Where(p => p.Key == "LurkersList")
            .Select(p => p.Value.FromJson<List<string>>())
            .FirstOrDefaultAsync(ctx.CancellationToken);
@@ -86,22 +85,25 @@ public class Command: ICommand
            {
                var randomTemplate = _notLurkingUnlurkReplies[Random.Shared.Next(_notLurkingUnlurkReplies.Length)];
                var text = TemplateHelper.ReplaceTemplatePlaceholders(randomTemplate, ctx);
-               await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
+               await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
+               await ctx.TtsService.SendCachedTts(text, ctx.Message.Broadcaster.Id, new());
                return;
            }
 
-           _lurkers.Remove(username);
-           _lurkerStorage.Value = _lurkers.ToJson();
-           ctx.DatabaseContext.Storages.Update(_lurkerStorage);
-           await ctx.DatabaseContext.SaveChangesAsync();
-
            var randomUnlurkTemplate = _snarkyReplies[Random.Shared.Next(_snarkyReplies.Length)];
            var unlurkText = TemplateHelper.ReplaceTemplatePlaceholders(randomUnlurkTemplate, ctx);
-           await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, unlurkText, ctx.Message.Id);
+           await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, unlurkText, ctx.Message.Id);
+           await ctx.TtsService.SendCachedTts(unlurkText, ctx.Message.Broadcaster.Id, new());
+           
+           _lurkers.Remove(username);
+           
+           _lurkerStorage.Value = _lurkers.ToJson();;
+           ctx.DatabaseContext.Storages.Update(_lurkerStorage);
+           await ctx.DatabaseContext.SaveChangesAsync();
        }
        catch (Exception ex)
        {
-           await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"@{ctx.Message.User.Username} This is the unlurk command", ctx.Message.Id);
+           await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"Something went wrong with the unlurk command. {ex.Message}", ctx.Message.Id);
        }
    }
 }

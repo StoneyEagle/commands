@@ -68,7 +68,6 @@ public class Command: ICommand
     public async Task Callback(CommandScriptContext ctx)
     {
         List<string> _lurkers = await ctx.DatabaseContext.Storages
-            .AsNoTracking()
             .Where(p => p.Key == "LurkersList")
             .Select(p => p.Value.FromJson<List<string>>())
             .FirstOrDefaultAsync(ctx.CancellationToken);
@@ -81,23 +80,26 @@ public class Command: ICommand
             {
                 var randomTemplate = _alreadyLurkingReplies[Random.Shared.Next(_alreadyLurkingReplies.Length)];
                 var text = TemplateHelper.ReplaceTemplatePlaceholders(randomTemplate, ctx);
-                await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
+                await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
+                await ctx.TtsService.SendCachedTts(text, ctx.Message.Broadcaster.Id, new());
                 return;
             }
 
+            var randomLurkTemplate = _snarkyLurkReplies[Random.Shared.Next(_snarkyLurkReplies.Length)];
+            var lurkText = TemplateHelper.ReplaceTemplatePlaceholders(randomLurkTemplate, ctx);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, lurkText, ctx.Message.Id);
+            await ctx.TtsService.SendCachedTts(lurkText, ctx.Message.Broadcaster.Id, new());
+            
             _lurkers.Add(username);
             
             _lurkerStorage.Value = _lurkers.ToJson();
-            Logger.App(_lurkerStorage.Value);
+            ctx.DatabaseContext.Storages.Update(_lurkerStorage);
             await ctx.DatabaseContext.SaveChangesAsync();
 
-            var randomLurkTemplate = _snarkyLurkReplies[Random.Shared.Next(_snarkyLurkReplies.Length)];
-            var lurkText = TemplateHelper.ReplaceTemplatePlaceholders(randomLurkTemplate, ctx);
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, lurkText, ctx.Message.Id);
         }
         catch (Exception ex)
         {
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"@{ctx.Message.User.DisplayName} This is the lurk command", ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"Something went wrong with the lurk command. {ex.Message}", ctx.Message.Id);
         }
     }
 }

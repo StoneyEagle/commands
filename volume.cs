@@ -25,7 +25,7 @@ public class Command: ICommand
 
         if (currentSong?.Item == null)
         {
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.User.Username, "No song is currently playing!", ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.User.Username, "No song is currently playing!", ctx.Message.Id);
             return;
         }
 
@@ -35,20 +35,20 @@ public class Command: ICommand
         {
             var currentVolume = await spotifyService.GetVolume();
             var text = $"Current volume level is {currentVolume}";
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.User.Username, text, ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.User.Username, text, ctx.Message.Id);
             return;
         }
 
         if (!int.TryParse(volumeParam, out int volume) || volume < 0 || volume > 100)
         {
-            await ctx.ChatService.SendMessageAsBot(ctx.Message.Broadcaster.Username, "Please provide a valid volume level between 0 and 100: !volume <level> (0-100).");
+            await ctx.TwitchChatService.SendMessageAsBot(ctx.Message.Broadcaster.Username, "Please provide a valid volume level between 0 and 100: !volume <level> (0-100).");
             return;
         }
         
         await spotifyService.SetVolume(new PlayerVolumeRequest(volume));
         
         var responseText = $"Volume set to {volume}%.";
-        await ctx.ChatService.SendReplyAsBot(ctx.Message.User.Username, responseText, ctx.Message.Id);
+        await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.User.Username, responseText, ctx.Message.Id);
     }
 }
 

@@ -23,7 +23,7 @@ public class Command: ICommand
                    "You can find the code on GitHub: https://github.com/StoneyEagle/Stream-Overlay " +
                    "If you have any ideas or suggestions, feel free to tell us!";
 
-        await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
+        await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
     }
 }
 

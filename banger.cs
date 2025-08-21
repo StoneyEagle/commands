@@ -47,7 +47,7 @@ public class Command: ICommand
 
         if (currentSong?.Item == null)
         {
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, "No song is currently playing!", ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, "No song is currently playing!", ctx.Message.Id);
             return;
         }
         
@@ -67,7 +67,7 @@ public class Command: ICommand
         
         var successText = $"Added {currentSong.Item.Name} to the bangers playlist!";
         
-        await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, successText, ctx.Message.Id);
+        await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, successText, ctx.Message.Id);
     }
 }
 

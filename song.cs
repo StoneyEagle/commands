@@ -24,12 +24,12 @@ public class Command: ICommand
         
         if (currentSong == null)
         {
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, "No song is currently playing!", ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, "No song is currently playing!", ctx.Message.Id);
             return;
         }
 
         string text = $"The current song is: {currentSong.Item.Name} by {currentSong.Item.Artists[0]?.Name} {currentSong.Item.Href}";
-        await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
+        await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, text, ctx.Message.Id);
     }
 }
 

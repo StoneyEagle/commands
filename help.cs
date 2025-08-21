@@ -21,7 +21,7 @@ public class Command: ICommand
         if (ctx.Arguments.Length == 0)
         {
             var errorText = $"@{ctx.Message.User.DisplayName} Invalid usage of the help command. Use !commands to see what commands are available for you.";
-            await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, errorText, ctx.Message.Id);
+            await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, errorText, ctx.Message.Id);
             return;
         }
 
@@ -44,7 +44,7 @@ public class Command: ICommand
             _ => "This command does not exist, use !commands to see what commands are available to you."
         };
 
-        await ctx.ChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"@{ctx.Message.User.DisplayName} {helpText}", ctx.Message.Id);
+        await ctx.TwitchChatService.SendReplyAsBot(ctx.Message.Broadcaster.Username, $"@{ctx.Message.User.DisplayName} {helpText}", ctx.Message.Id);
     }
 }
 
